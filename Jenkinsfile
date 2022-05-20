@@ -1,49 +1,32 @@
+
 pipeline {
-    agent any
-    tools {
-        maven 'Maven 3.3.9'
-        jdk 'jdk8'
+  agent any
+
+  tools {
+    maven 'maven3'
+  }
+  options {
+    buildDiscarder logRotator(daysToKeepStr: '10', numToKeepStr: '7')
+  }
+  parameters {
+    choice choices: ['develop', 'qa', 'master', 'main'], description: 'Choose the branch to build', name: 'branchName'
+  }
+  stages {
+    stage('Maven Build') {
+      steps {
+        sh 'mvn clean package'
+      }
     }
-    stages {
-        stage ('Initialize') {
-            steps {
-                sh '''
-                    echo "PATH = ${PATH}"
-                    echo "MAVEN_HOME = ${MAVEN_HOME}"
-                '''
-            }
-        }
-
-        stage ('Build') {
-            steps {
-                sh 'mvn -Dmaven.test.failure.ignore=true install' 
-            }
-            post {
-                success {
-                    junit 'target/surefire-reports/**/*.xml' 
-                }
-            }
-        }
+    // stage('Deploy to Tomcat') {
+    //   steps {
+    //     tomcatDeploy(["172.31.13.38","172.31.13.38","172.31.13.38"],"ec2-user","tomcat-dev")
+    //   }
+    // }
+  }
+  post {
+    success {
+      archiveArtifacts artifacts: 'target/*.jar'
+      cleanWs()
     }
-}//Stages Closing
-
-post{
-
- success{
- emailext to: 'pavithran@affiliatedrecruiters.org',
-          subject: "Pipeline Build is over .. Build # is ..${env.BUILD_NUMBER} and Build status is.. ${currentBuild.result}.",
-          body: "Pipeline Build is over .. Build # is ..${env.BUILD_NUMBER} and Build status is.. ${currentBuild.result}.",
-          replyTo: 'pavithran@affiliatedrecruiters.org'
- }
- 
- failure{
- emailext to: 'pavithran@affiliatedrecruiters.org',
-          subject: "Pipeline Build is over .. Build # is ..${env.BUILD_NUMBER} and Build status is.. ${currentBuild.result}.",
-          body: "Pipeline Build is over .. Build # is ..${env.BUILD_NUMBER} and Build status is.. ${currentBuild.result}.",
-          replyTo: 'pavithran@affiliatedrecruiters.org'
- }
- 
+  }
 }
-
-
-}//Pipeline closing
