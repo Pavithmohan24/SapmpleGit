@@ -1,32 +1,11 @@
-
-pipeline {
-  agent any
-
-  tools {
-    maven 'maven3'
+node{
+  stage('SCM Checkout'){
+    tool name: 'maven', type: 'maven'
+    
+    git 'https://github.com/Pavithmohan24/SapmpleGit'
   }
-  options {
-    buildDiscarder logRotator(daysToKeepStr: '10', numToKeepStr: '7')
+  stage('Compile-Package'){
+    sh 'mvn package'
   }
-  parameters {
-    choice choices: ['develop', 'qa', 'master', 'main'], description: 'Choose the branch to build', name: 'branchName'
-  }
-  stages {
-    stage('Maven Build') {
-      steps {
-        sh 'mvn clean package'
-      }
-    }
-    // stage('Deploy to Tomcat') {
-    //   steps {
-    //     tomcatDeploy(["172.31.13.38","172.31.13.38","172.31.13.38"],"ec2-user","tomcat-dev")
-    //   }
-    // }
-  }
-  post {
-    success {
-      archiveArtifacts artifacts: 'target/*.jar'
-      cleanWs()
-    }
-  }
+  
 }
